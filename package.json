@@ -1,0 +1,20 @@
+{
+  "name": "rakuten_ngl",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git"
+  },
+  "author": "Nathalie Goh Livorness",
+  "license": "MIT",
+  "dependencies": {
+    "botbuilder": "^3.2.3",
+    "express": "^4.14.0",
+    "restify": "^4.1.1"
+  }
+}
