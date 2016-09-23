@@ -1,29 +1,25 @@
+console.log("hello");
+
 //bot framework includes
 const restify = require('restify');
 const builder = require('botbuilder');
-const msrest = require('ms-rest');
 
 //app includes
 const path = require('path');
 const crypto = require('crypto');
 const passport = require('passport');
-const RakutenOAuth2Strategy = require('passport-rakuten-oauth2').Strategy;
-const unirest = require("unirest");
-const azs = require('azure-storage');
-//const insights = require('applicationinsights');
+const RakutenOAuth2Strategy = require('passport-rakuten').RakutenStrategy;
 const mongoose = require('mongoose');
 
 //private modules (this looks for the js file path from root folder)
 const User = require('./src/models/user');
 const Authorization = require('./src/models/authorization');
-const Rakuten = require('./rakuten');
-const env = require('./env');
-
-
+const Rakuten = require('./src/rakuten');
+const env = require('./src/env');
 
 //get environment variables
 const MICROSOFT_APP_ID = env("microsoft_app_id");
-const MICROSOFT_APP_SECRET = env("microsoft_app_secret");
+const MICROSOFT_APP_PASSWORD = env("microsoft_app_password");
 const SERVER_HOST = env("server_host", "localhost");
 const PORT = env("port", 3978);
 const SERVER_PORT = env("server_port", 3978);
@@ -40,7 +36,7 @@ const AUTH_URL = SERVER_PROTOCOL + "://" + SERVER_HOST + ":" + SERVER_PORT + "/a
 
 //start up
 console.log("starting bot...");
-
+console.log(DB_URI);
 //connect to mongo
 mongoose.connect(DB_URI);
 //mongoose.connect(DB_URI);
@@ -48,13 +44,13 @@ mongoose.connect(DB_URI);
 //var authorizations = {};
 
 
-// ####### Create chat bot using bot framework ############
+// // ####### Create chat bot using bot framework ############
 var connector = new builder.ChatConnector({
-    appId: process.env.MICROSOFT_APP_ID,
-    appPassword: process.env.MICROSOFT_APP_PASSWORD
+    appId: MICROSOFT_APP_ID,
+    appPassword: MICROSOFT_APP_PASSWORD
 });
 var bot = new builder.UniversalBot(connector);
-server.post('/api/messages', connector.listen());
+
 
 
 ///########## Setup Passport JS Auth ##########
@@ -79,8 +75,8 @@ passport.deserializeUser(function (userId, done) {
 });
 
 //configure passport authentication using passport for rakuten
-passport.use(new RakutenStrategy({
-    clientID: RAKUTEN_APP_ID, 
+passport.use(new RakutenOAuth2Strategy({
+    clientID: RAKUTEN_APP_KEY, 
     clientSecret: RAKUTEN_APP_SECRET,
     callbackURL: AUTH_URL + "/callback" //figure this thing out
 },
@@ -103,6 +99,7 @@ app.get('/', restify.serveStatic({
     default: 'index.html'
 }));
 
+      
 
 // Start Redirect to Auth Provider
 app.get('/auth/rakuten', function (req, res, next) {
@@ -116,8 +113,7 @@ app.get('/auth/rakuten/callback',
     function (req, res, next) {
 //get the authID out of the query string
         var authId = req.query.state;
-        
-/*
+  
 //lookup authorization details
         Authorization.findOne({ id : authId}, function (err, a) {
             if (err) {
@@ -159,16 +155,16 @@ bot.configure({
     userWelcomeMessage: "Hello... Welcome to the group.",
     goodbyeMessage: "Goodbye..."
 });
-
-bot.add('/', new builder.LuisDialog(LUIS_URL)
-    .on("SayHello", "/hello")
+*/
+bot.dialog('/', new builder.LuisDialog(LUIS_URL)
+    .on("Hello", "/hello")
     .on("Photo", "/photo")
     .on("Forget", "/forget")
     .on("Game", "/game")
     .on("Help", "/help")
     .onDefault(builder.DialogAction.send("you speak weird. I no understand you"))
     );
-
+/*
 bot.add('/photo', function (session) {
     console.log('[bot:/photo]');
     session.send("one sec, I'm looking for a photo for you");
@@ -203,18 +199,14 @@ bot.add('/forget', [
             session.endDialog("Ok. Thanks for not using the Men In Black flashy thing on me");
         }
     }]);
-
-bot.add('/hello', function (session) {
+*/
+bot.dialog('/hello', function (session) {
     console.log('[bot:/hello]');
-    if (session.userData.dropboxProfile
-        && session.userData.dropboxProfile.name
-        && session.userData.dropboxProfile.name.givenName) {
-        session.endDialog('Hello %s', session.userData.dropboxProfile.name.givenName);
-    } else {
-        session.endDialog("hi!");
-    }
-});
 
+        session.endDialog("hi!");
+    
+});
+/*
 bot.add('/help', function(session) {
    session.endDialog("I can do lots of interesting things. Try asking me to 'show you photos of something'. I can even 'play a game'."); 
 });
@@ -260,11 +252,9 @@ bot.on('DeleteUserData', function (message) {
 
 
 //hook up the bot connector
-app.post('/api/messages', bot.verifyBotFramework(), bot.listen());
+ app.post('/api/messages', connector.listen());
 
 //start listening for messages
 app.listen(PORT, function () {
     console.log("listening on %s", PORT);
-    console.log("startup duration = %s",(new Date() - startTime));
-    insights.client.trackMetric("StartupTime", new Date() - startTime);
 });
