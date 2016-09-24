@@ -39,7 +39,7 @@ console.log("starting bot...");
 console.log(DB_URI);
 //connect to mongo
 mongoose.connect(DB_URI);
-//mongoose.connect(DB_URI);
+
 
 //var authorizations = {};
 
@@ -101,91 +101,78 @@ app.get('/', restify.serveStatic({
 
       
 
-// Start Redirect to Auth Provider
+//start redirect to oauth provider
 app.get('/auth/rakuten', function (req, res, next) {
     passport.authenticate('rakuten-oauth2', {
         state: req.query.aid
     })(req, res, next);
 });
 
+//oauth provider redirects back to us here with token
 app.get('/auth/rakuten/callback',
     passport.authenticate('rakuten-oauth2', { failureRedirect: '/' }),
     function (req, res, next) {
-//get the authID out of the query string
+        //get the authId out of the querystring
         var authId = req.query.state;
+        console.log('[rest:/auth/rakuten/callback] success ' + authId);
+        
+        
+        
   
-//lookup authorization details
+        //lookup authorization details
         Authorization.findOne({ id : authId}, function (err, a) {
             if (err) {
                 console.log("error getting auth %j", err);
+                res.send("Error getting auth token.  Please refresh this page");
+            } else if(a) {
+                console.log("got the auth info %j", a);
+                
+                bot.beginDialog(a.address, "/auth_callback", req.user);
+
+                res.send("Thanks, we're all done here. You can go back to our chat to continue."); 
+            } else {
+                console.log("didn't find auth info");
+                res.send("Invalid auth token");
             }
-
-            console.log("got the auth info %j", a);
         });
-
-        bot.beginDialog({
-            to: authAddr.to,
-            from: authAddr.from
-        }, "/auth_callback", req.user);
-
-        res.send("Thanks, we're all done here. You can go back to our chat to continue.");
     });
 
-*/
 
-/*//Bot Dialogs ################## //
+//############### bot implementation ###################
 
-bot.use(function (session, next) {
-    if (session.message.from.isBot) {
-        next();
-    } else {
-        // console.log("*****SESSION*******\n", session.userData);
-        console.log("*****USER*****\n", session.message.from.id);
-        if (!session.userData.dropboxProfile) {
-            session.beginDialog('/auth');
-        } else {
+//Authentication Middleware
+
+bot.use({ 
+    botbuilder: function (session, next) {
+        //console.log("[bot:middleware] *****SESSION*******\n", session);
+        if ('/auth_callback' === session.options.dialogId
+            || session.userData.rakutenProfile) {
+            //user is authenticated or in the process of being authenticated
             next();
+        } else {
+            session.beginDialog('/auth');
         }
     }
 });
 
 
 
-bot.configure({
-    userWelcomeMessage: "Hello... Welcome to the group.",
-    goodbyeMessage: "Goodbye..."
-});
-*/
-bot.dialog('/', new builder.LuisDialog(LUIS_URL)
-    .on("Hello", "/hello")
-    .on("Photo", "/photo")
-    .on("Forget", "/forget")
-    .on("Game", "/game")
-    .on("Help", "/help")
-    .onDefault(builder.DialogAction.send("you speak weird. I no understand you"))
+
+var recognizer = new builder.LuisRecognizer(LUIS_URL);
+
+//root dialog just routes you to dialogs defined later
+bot.dialog('/', new builder.IntentDialog({ recognizers: [recognizer]})
+    .matches("SayHello", "/hello")
+    .matches("Query", "/query")
+    .matches("Forget", "/forget")
+    .matches("Game", "/game")
+    .matches("Help", "/help")
+    .onDefault(builder.DialogAction.send("Huh? Why don't you say something I understand??"))
     );
+
+
+
 /*
-bot.add('/photo', function (session) {
-    console.log('[bot:/photo]');
-    session.send("one sec, I'm looking for a photo for you");
-    var db = new Dropbox(session.userData.dropboxProfile._accessToken);
-    db.getRecentPhotos(function (photos) {
-        console.log("about to create photo message");
-        var msg = new builder.Message();
-        console.log("created message");
-        msg.setText(session, "I like this photo you took");
-        console.log("set the text");
-        msg.addAttachment({
-            contentType: "image/jpeg",
-            contentUrl: photos[0].link,
-            fallbackText: "if you were using a better messaging client, you'd see a photo right here"
-        });
-
-        session.send(msg);
-        session.endDialog();
-    });
-});
-
 bot.add('/forget', [
     function (session) {
         console.log('[bot:/forget]');
@@ -198,58 +185,67 @@ bot.add('/forget', [
         } else {
             session.endDialog("Ok. Thanks for not using the Men In Black flashy thing on me");
         }
-    }]);
-*/
+    }]);  
+ */
+
+//say hello to the user
 bot.dialog('/hello', function (session) {
     console.log('[bot:/hello]');
-
+    if (session.userData.rakutenProfile
+        && session.userData.rakutenProfile.name
+        && session.userData.rakutenProfile.name.givenName) {
+        session.endDialog('Hello %s', session.userData.rakutenProfile.name.givenName);
+    } else {
         session.endDialog("hi!");
-    
-});
-/*
-bot.add('/help', function(session) {
-   session.endDialog("I can do lots of interesting things. Try asking me to 'show you photos of something'. I can even 'play a game'."); 
+    }
 });
 
-bot.add('/game', function(session) {
-    session.endDialog("I haven't quite figured out how this game works yet.  Check back in a few days");
-});
 
-bot.add('/auth', function (session) {
-    console.log('[bot:/auth]');
+
+
+//this dialog is used to start the oauth flow with dropbox
+bot.dialog('/auth', function (session) {
+    console.log('[bot:/auth] ' + session.message);
 
     var authId = crypto.randomBytes(32).toString('hex');
-    authorizations[authId] = {
-        id: authId,
-        to: session.message.from,
-        from: session.message.to
+    var authObj = {
+        id :  authId,
+        address : session.message.address   
     };
 
-    Authorization.create(authorizations[authId], function (err, obj) {
-        if (err) { console.log("error creating authorization"); }
+    Authorization.create(authObj, function (err, obj) {
+        if (err) { 
+            console.log("[bot:/auth] error creating authorization");
+            session.endDialog('Failed to create an authorization request. Try again later.'); 
+        } else {
+            console.log("[bot:/auth] created authorization " + obj);
+            var url = AUTH_URL + "?aid=" + encodeURIComponent(authId);
+            //session.endDialog('Hello. I can help you use your dropbox files in coversations, but first I need you to grant me access to your dropbox here ' + url); 
+            var dbxlogo = builder.CardImage(session).url("https://cfl.dropboxstatic.com/static/images/brand/glyph@2x-vflJ1vxbq.png"); 
+               
+            var msg = new builder.Message(session)
+                .text("Hello. I can help you use your dropbox files in coversations, but first I need you to connect me to your dropbox")
+                .attachments([ 
+                    new builder.SigninCard(session) 
+                        .text("Connect to Dropbox") 
+                        .button("connect", url) 
+                ]);
+    
+            session.endDialog(msg); 
+        }
     });
-
-    var url = AUTH_URL + "?aid=" + encodeURIComponent(authId);
-    session.endDialog('Hello. I can help you use your dropbox files in coversations, but first I need you to grant me access to your dropbox here ' + url);
 });
 
-bot.add("/auth_callback", function (session, args) {
-    console.log("[/auth_callback]");
-    console.log(args);
-    session.userData.dropboxProfile = args;
-    session.endDialog("Thanks %s. I'm all connected now", session.userData.dropboxProfile.name.givenName);
+
+
+//this dialog is initiated from the end of the oauth callback in restify
+bot.dialog("/auth_callback", function (session, args) {
+    //console.log("[/auth_callback]");
+    //console.log(args);
+    session.userData.rakutenProfile = args;
+    session.endDialog("Thanks %s. I'm all connected now", session.userData.rakutenProfile.name.givenName);
     //session.endDialog("It might take me a few minutes learn about your files.  I'll let you know when I'm ready.");
 });
-
-bot.on('DeleteUserData', function (message) {
-    // ... delete users data
-    console.log('[DeleteUserData]');
-});
-
-
-
-*/
-
 
 //hook up the bot connector
  app.post('/api/messages', connector.listen());
