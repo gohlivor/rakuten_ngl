@@ -8,7 +8,7 @@ const builder = require('botbuilder');
 const path = require('path');
 const crypto = require('crypto');
 const passport = require('passport');
-const RakutenOAuth2Strategy = require('passport-rakuten').RakutenStrategy;
+const RakutenStrategy = require('passport-rakuten').RakutenStrategy;
 const mongoose = require('mongoose');
 
 //private modules (this looks for the js file path from root folder)
@@ -30,7 +30,7 @@ const DB_URI = env("db_uri"); //this is from mlab
 const LUIS_URL = env("luis_url", "https://api.projectoxford.ai/luis/v1");
 
 
-const AUTH_URL = SERVER_PROTOCOL + "://" + SERVER_HOST + ":" + SERVER_PORT + "/auth/dropbox";
+const AUTH_URL = SERVER_PROTOCOL + "://" + SERVER_HOST + ":" + SERVER_PORT + "/auth/rakuten";
 
 //---------------------------------------------------------------//
 
@@ -75,7 +75,7 @@ passport.deserializeUser(function (userId, done) {
 });
 
 //configure passport authentication using passport for rakuten
-passport.use(new RakutenOAuth2Strategy({
+passport.use(new RakutenStrategy({
     clientID: RAKUTEN_APP_KEY, 
     clientSecret: RAKUTEN_APP_SECRET,
     callbackURL: AUTH_URL + "/callback" //figure this thing out
@@ -103,14 +103,14 @@ app.get('/', restify.serveStatic({
 
 //start redirect to oauth provider
 app.get('/auth/rakuten', function (req, res, next) {
-    passport.authenticate('rakuten-oauth2', {
+    passport.authenticate('rakuten', {
         state: req.query.aid
     })(req, res, next);
 });
 
 //oauth provider redirects back to us here with token
 app.get('/auth/rakuten/callback',
-    passport.authenticate('rakuten-oauth2', { failureRedirect: '/' }),
+    passport.authenticate('rakuten', { failureRedirect: '/' }),
     function (req, res, next) {
         //get the authId out of the querystring
         var authId = req.query.state;
