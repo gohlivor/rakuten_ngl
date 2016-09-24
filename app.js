@@ -214,20 +214,21 @@ bot.dialog('/auth', function (session) {
     };
 
     Authorization.create(authObj, function (err, obj) {
+        console.log("reswtryjh");
         if (err) { 
             console.log("[bot:/auth] error creating authorization");
             session.endDialog('Failed to create an authorization request. Try again later.'); 
         } else {
             console.log("[bot:/auth] created authorization " + obj);
             var url = AUTH_URL + "?aid=" + encodeURIComponent(authId);
-            //session.endDialog('Hello. I can help you use your dropbox files in coversations, but first I need you to grant me access to your dropbox here ' + url); 
-            var dbxlogo = builder.CardImage(session).url("https://cfl.dropboxstatic.com/static/images/brand/glyph@2x-vflJ1vxbq.png"); 
+            //session.endDialog('Hello. I can help you use Rakuten! But first please log in here ' + url); 
+            //var dbxlogo = builder.CardImage(session).url("https://cfl.dropboxstatic.com/static/images/brand/glyph@2x-vflJ1vxbq.png"); 
                
             var msg = new builder.Message(session)
-                .text("Hello. I can help you use your dropbox files in coversations, but first I need you to connect me to your dropbox")
+                .text("Hello. I can help you shop on Rakuten. But first please log in here.")
                 .attachments([ 
                     new builder.SigninCard(session) 
-                        .text("Connect to Dropbox") 
+                        .text("Connect to Rakuten") 
                         .button("connect", url) 
                 ]);
     
