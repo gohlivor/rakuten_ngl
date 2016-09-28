@@ -78,7 +78,7 @@ passport.deserializeUser(function (userId, done) {
 passport.use(new RakutenStrategy({
     clientID: RAKUTEN_APP_KEY, 
     clientSecret: RAKUTEN_APP_SECRET,
-    callbackURL: AUTH_URL + "/callback" //figure this thing out
+    callbackURL: AUTH_URL + "/callback" 
 },
     function (accessToken, refreshToken, profile, done) { //this will access user profile
         profile.accessToken = accessToken;
@@ -247,6 +247,7 @@ bot.dialog("/auth_callback", function (session, args) {
     session.endDialog("Thanks %s. I'm all connected now", session.userData.rakutenProfile.name.givenName);
     //session.endDialog("It might take me a few minutes learn about your files.  I'll let you know when I'm ready.");
 });
+
 
 //hook up the bot connector
  app.post('/api/messages', connector.listen());
