@@ -18,6 +18,7 @@ const Rakuten = require('./src/rakuten');
 const env = require('./src/env');
 const request = require('request');
 
+
 //get environment variables
 const MICROSOFT_APP_ID = env("microsoft_app_id");
 const MICROSOFT_APP_PASSWORD = env("microsoft_app_password");
