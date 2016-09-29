@@ -146,8 +146,8 @@ app.get('/auth/rakuten/callback',
 
 //Authentication Middleware
 
-bot.use({ 
-    botbuilder: function (session, next) {
+
+bot.dialog('/login', function (session, next) {
         //console.log("[bot:middleware] *****SESSION*******\n", session);
         if ('/auth_callback' === session.options.dialogId
             || session.userData.rakutenProfile) {
@@ -156,9 +156,7 @@ bot.use({
         } else {
             session.beginDialog('/auth');
         }
-    }
-});
-
+    })
 
 
 
@@ -166,6 +164,7 @@ var recognizer = new builder.LuisRecognizer(LUIS_URL);
 
 //root dialog just routes you to dialogs defined later
 bot.dialog('/', new builder.IntentDialog({ recognizers: [recognizer]})
+    .matches(/^login/i, '/login')   
     .matches(/^search/i, '/search_items')
     .matches("SayHello", "/hello")
     .matches("Query", "/query")
@@ -270,7 +269,10 @@ bot.dialog("/search_items", [
                     .attachments([
                         new builder.HeroCard(session)
                             .text(body.Items[0].Item.itemName) 
-                            .button("View Item", body.Items[0].Item.itemUrl) 
+                            .tap(builder.CardAction.openUrl(session, body.Items[0].Item.itemUrl))
+                            .images([
+                                builder.CardImage.create(session, body.Items[0].Item.smallImageUrls[0].imageUrl)
+                            ])
                     ]);
         
                 session.endDialog(msg); 
