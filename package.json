@@ -2,7 +2,8 @@
   "name": "rakuten_ngl",
   "version": "1.0.0",
   "description": "",
-  "main": "app.js",
+  "main": "app
+  .js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -18,7 +19,11 @@
     "mongoose": "^4.6.1",
     "passport": "^0.3.2",
     "passport-rakuten": "^1.0.1",
+<<<<<<< HEAD
     "request-promise": "^4.1.1",
+=======
+    "request": "^2.75.0",
+>>>>>>> 89856408f0ec4feab732c9598cf904141b9da676
     "restify": "^4.1.1"
   }
 }
