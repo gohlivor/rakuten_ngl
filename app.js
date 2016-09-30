@@ -163,6 +163,7 @@ var recognizer = new builder.LuisRecognizer(LUIS_URL);
 bot.dialog('/', new builder.IntentDialog({ recognizers: [recognizer]})
     .matches(/^login/i, '/login')   
     .matches(/^search/i, '/search_items')
+    .matches(/^books/i, '/search_books')
     .matches("SayHello", "/hello")
     .matches("Query", "/query")
     .matches("Forget", "/forget")
@@ -276,6 +277,37 @@ bot.dialog("/search_items", [
             }
         )}
 ])
+
+
+bot.dialog("/search_books", [
+    function(session){
+        builder.Prompts.text(session, 'What books do you want to search for?');
+    },
+    function(session, results) {
+        request("https://app.rakuten.co.jp/services/api/BooksTotal/Search/20130522?format=json&applicationId=1048495454231282153&keyword=" + encodeURIComponent(results), 
+            function(error, response, body){
+                console.log(body);
+
+                var body = JSON.parse(response.body);
+
+                var msg = new builder.Message(session)
+                    .text("Here is the first result.")
+                    .attachments([
+                        new builder.HeroCard(session)
+                            .text(body.Items[0].Item.itemName) 
+                            .tap(builder.CardAction.openUrl(session, body.Items[0].Item.itemUrl))
+                            .images([
+                                builder.CardImage.create(session, body.Items[0].Item.smallImageUrls[0].imageUrl)
+                            ])
+                    ]);
+        
+                session.endDialog(msg); 
+            }
+        )}
+])
+
+
+
 
 
 
