@@ -31,11 +31,11 @@ const RAKUTEN_APP_KEY = env("rakuten_app_key");
 const RAKUTEN_APP_SECRET = env("rakuten_app_secret");
 const DB_URI = env("db_uri"); //this is from mlab
 const LUIS_URL = env("luis_url", "https://api.projectoxford.ai/luis/v1");
-const RAK_API_KEY = env("rak_api_key");
+
 
 
 // Ichiba API
-const ICHIBA_API_SEARCH = "https://app.rakuten.co.jp/services/api/IchibaItem/Search/20140222?format=json&applicationId=" + RAK_API_KEY + "&keyword=";
+const ICHIBA_API_SEARCH = "https://app.rakuten.co.jp/services/api/IchibaItem/Search/20140222?format=json&applicationId=" + RAKUTEN_APP_KEY + "&keyword=";
 
 
 const AUTH_URL = SERVER_PROTOCOL + "://" + SERVER_HOST + "/auth/rakuten";
@@ -169,13 +169,9 @@ var recognizer = new builder.LuisRecognizer(LUIS_URL);
 
 //root dialog just routes you to dialogs defined later
 bot.dialog('/', new builder.IntentDialog({ recognizers: [recognizer]})
-    .matches(/^login/i, '/login')   
-<<<<<<< HEAD
+    .matches(/^login/i, '/login')
     .matches(/^search/i, '/search_items')
     .matches(/^books/i, '/search_books')
-=======
-    .matches(/^search ichiba/i, '/search_items')
->>>>>>> 3755fa9631b28e99d6965badc3619a09bfbba5ec
     .matches("SayHello", "/hello")
     .matches("Query", "/query")
     .matches("Forget", "/forget")
@@ -295,10 +291,10 @@ bot.dialog("/search_books", [
                     .text("Here is the first result.")
                     .attachments([
                         new builder.HeroCard(session)
-                            .text(body.Items[0].Item.itemName) 
+                            .text(body.Items[0].Item.title) 
                             .tap(builder.CardAction.openUrl(session, body.Items[0].Item.itemUrl))
                             .images([
-                                builder.CardImage.create(session, body.Items[0].Item.smallImageUrls[0].imageUrl)
+                                builder.CardImage.create(session, body.Items[0].Item.mediumImageUrl)
                             ])
                     ]);
         
