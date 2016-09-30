@@ -30,7 +30,6 @@ const RAKUTEN_APP_SECRET = env("rakuten_app_secret");
 const DB_URI = env("db_uri"); //this is from mlab
 const LUIS_URL = env("luis_url", "https://api.projectoxford.ai/luis/v1");
 
-
 const AUTH_URL = SERVER_PROTOCOL + "://" + SERVER_HOST + "/auth/rakuten";
 
 //took out port because it was causing errors ":" + SERVER_PORT
