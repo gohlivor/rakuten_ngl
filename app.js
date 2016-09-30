@@ -269,28 +269,6 @@ bot.dialog("/search_items", [
             function(error, response, body){
                 var body = JSON.parse(response.body);
 
-                // var itemUrl = url.parse(body.Items[0].Item.itemUrl);
-                // var urlHttps = "https://" + itemUrl.host + itemUrl.path;
-                // console.log(urlHttps);
-
-                 // var msg = new builder.Message(session)
-                //     .text("Here is the first result.")
-                //     .attachments([
-                //         new builder.HeroCard(session)
-                //             .text(body.Items[0].Item.itemName) 
-                //             .tap(builder.CardAction.openUrl(session, urlHttps))
-                //             .buttons([
-                //                 builder.CardAction.openUrl(session, urlHttps, 'View Item')
-                //             ])
-                //             .images([
-                //                 builder.CardImage.create(session, body.Items[0].Item.mediumImageUrls[0].imageUrl)
-                //             ])
-                //     ]);
-
-
-        
-                // session.endDialog(msg); 
-
                 session.send(getHeroCardCarousel(session, body));
             }
         )}
