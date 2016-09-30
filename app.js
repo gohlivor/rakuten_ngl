@@ -18,6 +18,7 @@ const Authorization = require('./src/models/authorization');
 const Rakuten = require('./src/rakuten');
 const env = require('./src/env');
 const request = require('request');
+const vision = require('./src/vision');
 
 
 //get environment variables
@@ -46,7 +47,7 @@ const AUTH_URL = SERVER_PROTOCOL + "://" + SERVER_HOST + "/auth/rakuten";
 console.log("starting bot...");
 console.log(DB_URI);
 //connect to mongo
-mongoose.connect(DB_URI);
+// mongoose.connect(DB_URI);
 
 
 //var authorizations = {};
@@ -169,13 +170,9 @@ var recognizer = new builder.LuisRecognizer(LUIS_URL);
 
 //root dialog just routes you to dialogs defined later
 bot.dialog('/', new builder.IntentDialog({ recognizers: [recognizer]})
-    .matches(/^login/i, '/login')   
-    .matches(/^search ichiba/i, '/search_items')
-    .matches("SayHello", "/hello")
-    .matches("Query", "/query")
-    .matches("Forget", "/forget")
-    .matches("Game", "/game")
-    .matches("Help", "/help")
+    .matches(/^login/i, '/login')
+    // .matches(/^search/i, '/search_by_text')
+    .matches(/^photo/i, '/search_items_with_photo')
     .onDefault(builder.DialogAction.send("Huh? Why don't you say something I understand??"))
     );
 
@@ -258,7 +255,7 @@ bot.dialog("/auth_callback", function (session, args) {
 });
 
 
-bot.dialog("/search_items", [
+bot.dialog("/search_by_text", [
     function(session){
         builder.Prompts.text(session, 'What do you want to search for?');
     },
@@ -271,9 +268,29 @@ bot.dialog("/search_items", [
 
                 session.send(getHeroCardCarousel(session, body));
             }
-        )}
+        )
+    }
 ])
 
+
+bot.dialog("/search_items_with_photo", [
+    function (session) {
+        builder.Prompts.attachment(session, "Upload a picture." + session.userData.name);
+    },
+    function (session, results) {
+        console.log(results.response[0].contentUrl)
+        vision.getImageDescription(results.response[0].contentUrl, connector, function(data){
+            console.log(data);
+            request(ICHIBA_API_SEARCH + encodeURIComponent(data), 
+                function(error, response, body){
+                    var body = JSON.parse(response.body);
+
+                    session.send(getHeroCardCarousel(session, body));
+                }
+            )
+        });
+    }
+])
 
 
 //hook up the bot connector
