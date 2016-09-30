@@ -42,9 +42,7 @@ console.log(DB_URI);
 //connect to mongo
 mongoose.connect(DB_URI);
 
-
 //var authorizations = {};
-
 
 // // ####### Create chat bot using bot framework ############
 var connector = new builder.ChatConnector({
