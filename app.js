@@ -170,8 +170,9 @@ var recognizer = new builder.LuisRecognizer(LUIS_URL);
 //root dialog just routes you to dialogs defined later
 bot.dialog('/', new builder.IntentDialog({ recognizers: [recognizer]})
     .matches(/^login/i, '/login')
-    .matches(/^search/i, '/search_items')
+    .matches(/^items/i, '/search_items')
     .matches(/^books/i, '/search_books')
+    .matches(/^hi/i, '/askSearch' )
     .matches("SayHello", "/hello")
     .matches("Query", "/query")
     .matches("Forget", "/forget")
@@ -179,6 +180,15 @@ bot.dialog('/', new builder.IntentDialog({ recognizers: [recognizer]})
     .matches("Help", "/help")
     .onDefault(builder.DialogAction.send("Huh? Why don't you say something I understand??"))
     );
+
+
+
+bot.dialog('/askSearch', [
+    function (session) {
+        builder.Prompts.text(session, 'oh hai! I can help you search Rakuten! Do you want to search for "items" or "books"? Remember, im just a bot! Please only say one of those two things!');
+    }
+]);
+
 
 
 
@@ -261,7 +271,7 @@ bot.dialog("/auth_callback", function (session, args) {
 
 bot.dialog("/search_items", [
     function(session){
-        builder.Prompts.text(session, 'What do you want to search for?');
+        builder.Prompts.text(session, 'What items do you want to search for?');
     },
     function(session, results) {
     
