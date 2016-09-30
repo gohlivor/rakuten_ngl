@@ -10,6 +10,7 @@ const crypto = require('crypto');
 const passport = require('passport');
 const RakutenStrategy = require('passport-rakuten').RakutenStrategy;
 const mongoose = require('mongoose');
+const url = require('url');
 
 //private modules (this looks for the js file path from root folder)
 const User = require('./src/models/user');
@@ -17,6 +18,7 @@ const Authorization = require('./src/models/authorization');
 const Rakuten = require('./src/rakuten');
 const env = require('./src/env');
 const request = require('request');
+
 
 //get environment variables
 const MICROSOFT_APP_ID = env("microsoft_app_id");
@@ -29,6 +31,12 @@ const RAKUTEN_APP_KEY = env("rakuten_app_key");
 const RAKUTEN_APP_SECRET = env("rakuten_app_secret");
 const DB_URI = env("db_uri"); //this is from mlab
 const LUIS_URL = env("luis_url", "https://api.projectoxford.ai/luis/v1");
+const RAK_API_KEY = env("rak_api_key");
+
+
+// Ichiba API
+const ICHIBA_API_SEARCH = "https://app.rakuten.co.jp/services/api/IchibaItem/Search/20140222?format=json&applicationId=" + RAK_API_KEY + "&keyword=";
+
 
 const AUTH_URL = SERVER_PROTOCOL + "://" + SERVER_HOST + "/auth/rakuten";
 
@@ -162,8 +170,12 @@ var recognizer = new builder.LuisRecognizer(LUIS_URL);
 //root dialog just routes you to dialogs defined later
 bot.dialog('/', new builder.IntentDialog({ recognizers: [recognizer]})
     .matches(/^login/i, '/login')   
+<<<<<<< HEAD
     .matches(/^search/i, '/search_items')
     .matches(/^books/i, '/search_books')
+=======
+    .matches(/^search ichiba/i, '/search_items')
+>>>>>>> 3755fa9631b28e99d6965badc3619a09bfbba5ec
     .matches("SayHello", "/hello")
     .matches("Query", "/query")
     .matches("Forget", "/forget")
@@ -256,24 +268,13 @@ bot.dialog("/search_items", [
         builder.Prompts.text(session, 'What do you want to search for?');
     },
     function(session, results) {
-        request("https://app.rakuten.co.jp/services/api/IchibaItem/Search/20140222?format=json&applicationId=1048495454231282153&keyword=" + encodeURIComponent(results), 
+    
+        console.log("api search: " + ICHIBA_API_SEARCH + encodeURIComponent(results.response));
+        request(ICHIBA_API_SEARCH + encodeURIComponent(results.response), 
             function(error, response, body){
-                console.log(body);
-
                 var body = JSON.parse(response.body);
 
-                var msg = new builder.Message(session)
-                    .text("Here is the first result.")
-                    .attachments([
-                        new builder.HeroCard(session)
-                            .text(body.Items[0].Item.itemName) 
-                            .tap(builder.CardAction.openUrl(session, body.Items[0].Item.itemUrl))
-                            .images([
-                                builder.CardImage.create(session, body.Items[0].Item.smallImageUrls[0].imageUrl)
-                            ])
-                    ]);
-        
-                session.endDialog(msg); 
+                session.send(getHeroCardCarousel(session, body));
             }
         )}
 ])
@@ -318,3 +319,36 @@ bot.dialog("/search_books", [
 app.listen(PORT, function () {
     console.log("listening on %s", PORT);
 });
+
+
+// Card Functions
+function getHeroCardCarousel(session, body) {
+
+    var cards = [];
+
+    for (var i = 0; i < body.Items.length && i < 5; i++ ) {
+
+        //URL
+        var itemUrl = url.parse(body.Items[i].Item.itemUrl);
+        var urlHttps = "https://" + itemUrl.host + itemUrl.path;
+
+        var msg = new builder.HeroCard(session)
+                    .text(body.Items[i].Item.itemName) 
+                    .tap(builder.CardAction.openUrl(session, urlHttps))
+                    .buttons([
+                        builder.CardAction.openUrl(session, urlHttps, 'View Item')
+                    ])
+                    .images([
+                        builder.CardImage.create(session, body.Items[i].Item.mediumImageUrls[0].imageUrl)
+                    ])
+          
+        cards[i] = msg;
+    }
+
+
+    var reply = new builder.Message(session)
+        .attachmentLayout(builder.AttachmentLayout.carousel)
+        .attachments(cards);
+
+    return reply;
+}
