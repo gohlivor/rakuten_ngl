@@ -29,7 +29,6 @@ const RAKUTEN_APP_SECRET = env("rakuten_app_secret");
 const DB_URI = env("db_uri"); //this is from mlab
 const LUIS_URL = env("luis_url", "https://api.projectoxford.ai/luis/v1");
 
-
 const AUTH_URL = SERVER_PROTOCOL + "://" + SERVER_HOST + "/auth/rakuten";
 
 //took out port because it was causing errors ":" + SERVER_PORT
@@ -42,9 +41,7 @@ console.log(DB_URI);
 //connect to mongo
 mongoose.connect(DB_URI);
 
-
 //var authorizations = {};
-
 
 // // ####### Create chat bot using bot framework ############
 var connector = new builder.ChatConnector({
