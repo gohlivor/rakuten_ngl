@@ -16,6 +16,7 @@ const User = require('./src/models/user');
 const Authorization = require('./src/models/authorization');
 const Rakuten = require('./src/rakuten');
 const env = require('./src/env');
+const request = require('request');
 
 //get environment variables
 const MICROSOFT_APP_ID = env("microsoft_app_id");
@@ -92,6 +93,7 @@ var app = restify.createServer();
 app.use(restify.queryParser());
 app.use(restify.bodyParser());
 app.use(passport.initialize());
+app.use(passport.session());
 
 app.get('/', restify.serveStatic({
     directory: './public',
@@ -141,8 +143,8 @@ app.get('/auth/rakuten/callback',
 
 //Authentication Middleware
 
-bot.use({ 
-    botbuilder: function (session, next) {
+
+bot.dialog('/login', function (session, next) {
         //console.log("[bot:middleware] *****SESSION*******\n", session);
         if ('/auth_callback' === session.options.dialogId
             || session.userData.rakutenProfile) {
@@ -151,9 +153,7 @@ bot.use({
         } else {
             session.beginDialog('/auth');
         }
-    }
-});
-
+    })
 
 
 
@@ -161,6 +161,8 @@ var recognizer = new builder.LuisRecognizer(LUIS_URL);
 
 //root dialog just routes you to dialogs defined later
 bot.dialog('/', new builder.IntentDialog({ recognizers: [recognizer]})
+    .matches(/^login/i, '/login')   
+    .matches(/^search/i, '/search_items')
     .matches("SayHello", "/hello")
     .matches("Query", "/query")
     .matches("Forget", "/forget")
@@ -214,7 +216,7 @@ bot.dialog('/auth', function (session) {
 
     Authorization.create(authObj, function (err, obj) {
         console.log("reswtryjh");
-        if (err) { 
+        if (err) {
             console.log("[bot:/auth] error creating authorization");
             session.endDialog('Failed to create an authorization request. Try again later.'); 
         } else {
@@ -246,6 +248,35 @@ bot.dialog("/auth_callback", function (session, args) {
     session.endDialog("Thanks %s. I'm all connected now", session.userData.rakutenProfile.name.givenName);
     //session.endDialog("It might take me a few minutes learn about your files.  I'll let you know when I'm ready.");
 });
+
+
+bot.dialog("/search_items", [
+    function(session){
+        builder.Prompts.text(session, 'What do you want to search for?');
+    },
+    function(session, results) {
+        request("https://app.rakuten.co.jp/services/api/IchibaItem/Search/20140222?format=json&applicationId=1048495454231282153&keyword=" + encodeURIComponent(results), 
+            function(error, response, body){
+                console.log(body);
+
+                var body = JSON.parse(response.body);
+
+                var msg = new builder.Message(session)
+                    .text("Here is the first result.")
+                    .attachments([
+                        new builder.HeroCard(session)
+                            .text(body.Items[0].Item.itemName) 
+                            .tap(builder.CardAction.openUrl(session, body.Items[0].Item.itemUrl))
+                            .images([
+                                builder.CardImage.create(session, body.Items[0].Item.smallImageUrls[0].imageUrl)
+                            ])
+                    ]);
+        
+                session.endDialog(msg); 
+            }
+        )}
+])
+
 
 
 //hook up the bot connector
