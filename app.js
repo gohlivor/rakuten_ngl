@@ -46,7 +46,7 @@ const AUTH_URL = SERVER_PROTOCOL + "://" + SERVER_HOST + "/auth/rakuten";
 console.log("starting bot...");
 console.log(DB_URI);
 //connect to mongo
-// mongoose.connect(DB_URI);
+mongoose.connect(DB_URI);
 
 
 //var authorizations = {};
