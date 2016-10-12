@@ -186,7 +186,7 @@ bot.dialog('/', new builder.IntentDialog({ recognizers: [recognizer]})
 
 bot.dialog('/askSearch', [
     function (session) {
-        builder.Prompts.text(session, 'oh hai! I can help you search Rakuten! Do you want to search for "items" or "books"? Remember, im just a bot! Please only say one of those two things! Or say "auth" if you want to log in!);
+        builder.Prompts.text(session, 'oh hai! I can help you search Rakuten! Do you want to search for "items" or "books"? Remember, im just a bot! Please only say one of those two things! Or say "auth" if you want to log in!');
     }
 ]);
 
