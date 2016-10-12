@@ -172,6 +172,7 @@ bot.dialog('/', new builder.IntentDialog({ recognizers: [recognizer]})
     .matches(/^login/i, '/login')
     .matches(/^items/i, '/search_items')
     .matches(/^books/i, '/search_books')
+    .matches(/^auth/i, '/auth')
     .matches(/^hi/i, '/askSearch' )
     .matches("SayHello", "/hello")
     .matches("Query", "/query")
@@ -185,7 +186,7 @@ bot.dialog('/', new builder.IntentDialog({ recognizers: [recognizer]})
 
 bot.dialog('/askSearch', [
     function (session) {
-        builder.Prompts.text(session, 'oh hai! I can help you search Rakuten! Do you want to search for "items" or "books"? Remember, im just a bot! Please only say one of those two things!');
+        builder.Prompts.text(session, 'oh hai! I can help you search Rakuten! Do you want to search for "items" or "books"? Remember, im just a bot! Please only say one of those two things! Or say "auth" if you want to log in!);
     }
 ]);
 
@@ -223,7 +224,7 @@ bot.dialog('/hello', function (session) {
 
 
 
-//this dialog is used to start the oauth flow with dropbox
+//this dialog is used to start the oauth flow with rakuten
 bot.dialog('/auth', function (session) {
     console.log('[bot:/auth] ' + session.message);
 
@@ -241,7 +242,7 @@ bot.dialog('/auth', function (session) {
         } else {
             console.log("[bot:/auth] created authorization " + obj);
             var url = AUTH_URL + "?aid=" + encodeURIComponent(authId);
-            //session.endDialog('Hello. I can help you use Rakuten! But first please log in here ' + url); 
+            session.endDialog('Hello. I can help you use Rakuten! But first please log in here ' + url); 
             //var dbxlogo = builder.CardImage(session).url("https://cfl.dropboxstatic.com/static/images/brand/glyph@2x-vflJ1vxbq.png"); 
                
             var msg = new builder.Message(session)
