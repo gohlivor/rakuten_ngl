@@ -62,8 +62,7 @@ var connector = new builder.ChatConnector({
     appId: MICROSOFT_APP_ID,
     appPassword: MICROSOFT_APP_PASSWORD
 });
-var bot = new builder.UniversalBot(connector);
-//app.post('/api/messages', connector.listen());
+
 
 
 ///########## Setup Passport JS Auth ##########
@@ -99,7 +98,24 @@ passport.use(new RakutenStrategy({
         return done(null, profile);
     }
     ));
-    
+ 
+ // ########### Set Up Restify #############
+var app = restify.createServer();
+app.use(restify.queryParser());
+app.use(restify.bodyParser());
+app.use(passport.initialize());
+app.use(passport.session());
+ 
+ 
+ console.log(app);
+ console.log(bot);   
+ 
+ 
+ //## listen for messages ##//
+var bot = new builder.UniversalBot(connector);
+app.post('/api/messages', connector.listen());
+
+
  // Initialize with the strategies we want to use (from Matt Dotson)
 var ba = new botauth.BotAuthenticator(app, bot, { baseUrl : "https://" + SERVER_HOST, secret : BOTAUTH_SECRET })
     .provider("rakuten", (options) => { 
@@ -121,22 +137,15 @@ var ba = new botauth.BotAuthenticator(app, bot, { baseUrl : "https://" + SERVER_
     
 
 
-// ########### Set Up Restify #############
-var app = restify.createServer();
-app.use(restify.queryParser());
-app.use(restify.bodyParser());
-app.use(passport.initialize());
-app.use(passport.session());
 
-/*app.get('/', restify.serveStatic({
+
+app.get('/', restify.serveStatic({
     directory: './public',
     default: 'index.html'
 }));
-*/
 
-app.get("/", (req, res) => {
-    res.send("rakuten");
-});    
+
+    
 
 //start redirect to oauth provider
 
@@ -145,19 +154,20 @@ app.get("/", (req, res) => {
         state: req.query.aid
     })(req, res, next);
 });
-*/
+
 
 //oauth provider redirects back to us here with token
-/*app.get('/auth/rakuten/callback',
+app.get('/auth/rakuten/callback',
     passport.authenticate('rakuten', { failureRedirect: '/' }),
     function (req, res, next) {
         //get the authId out of the querystring
         var authId = req.query.state;
         console.log('[rest:/auth/rakuten/callback] success ' + authId);
-     */   
+    });
         
+        */
         
-  
+  /*
         //lookup authorization details
         Authorization.findOne({ id : authId}, function (err, a) {
             if (err) {
@@ -175,22 +185,11 @@ app.get("/", (req, res) => {
             }
         });
     });
-
+*/
 
 //############### bot implementation ###################
 
 //Authentication Middleware
-
-bot.dialog("/login", [].concat( 
-    ba.authenticate("rakuten"),
-    function(session, results) {
-        //get the profile
-        var user = ba.profile(session, "rakuten");
-
-        //todo: get bookmarks and not just dump user info in chat
-        session.endDialog(`your user info is ${ JSON.stringify(user) }`);
-    }
-));
 
 
 
@@ -232,6 +231,17 @@ bot.dialog('/askSearch', [
         builder.Prompts.text(session, 'hi! I can help you search Rakuten! Do you want to search for "items" or "books"? Remember, im just a bot! Please only say one of those two things! Or say "auth" if you want to log in!');
     }
 ]);
+
+bot.dialog("/login", [].concat( 
+    ba.authenticate("rakuten"),
+    function(session, results) {
+        //get the profile
+        var user = ba.profile(session, "rakuten");
+
+        //todo: get bookmarks and not just dump user info in chat
+        session.endDialog(`your user info is ${ JSON.stringify(user) }`);
+    }
+));
 
 
 
