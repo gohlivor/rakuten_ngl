@@ -3,6 +3,8 @@ console.log("hello");
 //bot framework includes
 const restify = require('restify');
 const builder = require('botbuilder');
+const botauth = require('botauth'); //npm made by Matt Dotson
+const envx = require('envx');
 
 //app includes
 const path = require('path');
@@ -31,7 +33,7 @@ const RAKUTEN_APP_KEY = env("rakuten_app_key");
 const RAKUTEN_APP_SECRET = env("rakuten_app_secret");
 const DB_URI = env("db_uri"); //this is from mlab
 const LUIS_URL = env("luis_url", "https://api.projectoxford.ai/luis/v1");
-
+const BOTAUTH_SECRET = env("BOTAUTH_SECRET");
 
 
 // Ichiba API
@@ -52,13 +54,16 @@ mongoose.connect(DB_URI);
 
 //var authorizations = {};
 
+
+
+
 // // ####### Create chat bot using bot framework ############
 var connector = new builder.ChatConnector({
     appId: MICROSOFT_APP_ID,
     appPassword: MICROSOFT_APP_PASSWORD
 });
 var bot = new builder.UniversalBot(connector);
-
+//app.post('/api/messages', connector.listen());
 
 
 ///########## Setup Passport JS Auth ##########
@@ -94,6 +99,26 @@ passport.use(new RakutenStrategy({
         return done(null, profile);
     }
     ));
+    
+ // Initialize with the strategies we want to use (from Matt Dotson)
+var ba = new botauth.BotAuthenticator(app, bot, { baseUrl : "https://" + SERVER_HOST, secret : BOTAUTH_SECRET })
+    .provider("rakuten", (options) => { 
+        return new RakutenStrategy({
+            clientID : RAKUTEN_APP_KEY,
+            clientSecret : RAKUTEN_APP_SECRET,
+            callbackURL : options.callbackURL,
+            scope : ["rakuten_favoritebookmark_read"],
+            skipUserProfile : true
+        }, (accessToken, refreshToken, profile, done) => {
+            //botauth stores profile object in bot userData, so make sure any token data you need is included
+            profile = profile || {};
+            profile.accessToken = accessToken;
+            profile.refreshToken = refreshToken;
+            profile.provider = "rakuten"; //workaround, shouldn't need this
+            return done(null, profile);
+        });
+    });   
+    
 
 
 // ########### Set Up Restify #############
@@ -103,28 +128,33 @@ app.use(restify.bodyParser());
 app.use(passport.initialize());
 app.use(passport.session());
 
-app.get('/', restify.serveStatic({
+/*app.get('/', restify.serveStatic({
     directory: './public',
     default: 'index.html'
 }));
+*/
 
-      
+app.get("/", (req, res) => {
+    res.send("rakuten");
+});    
 
 //start redirect to oauth provider
-app.get('/auth/rakuten', function (req, res, next) {
+
+/*app.get('/auth/rakuten', function (req, res, next) {
     passport.authenticate('rakuten', {
         state: req.query.aid
     })(req, res, next);
 });
+*/
 
 //oauth provider redirects back to us here with token
-app.get('/auth/rakuten/callback',
+/*app.get('/auth/rakuten/callback',
     passport.authenticate('rakuten', { failureRedirect: '/' }),
     function (req, res, next) {
         //get the authId out of the querystring
         var authId = req.query.state;
         console.log('[rest:/auth/rakuten/callback] success ' + authId);
-        
+     */   
         
         
   
@@ -151,8 +181,20 @@ app.get('/auth/rakuten/callback',
 
 //Authentication Middleware
 
+bot.dialog("/login", [].concat( 
+    ba.authenticate("rakuten"),
+    function(session, results) {
+        //get the profile
+        var user = ba.profile(session, "rakuten");
 
-bot.dialog('/login', function (session, next) {
+        //todo: get bookmarks and not just dump user info in chat
+        session.endDialog(`your user info is ${ JSON.stringify(user) }`);
+    }
+));
+
+
+
+/*bot.dialog('/login', function (session, next) {
         //console.log("[bot:middleware] *****SESSION*******\n", session);
         if ('/auth_callback' === session.options.dialogId
             || session.userData.rakutenProfile) {
@@ -162,6 +204,7 @@ bot.dialog('/login', function (session, next) {
             session.beginDialog('/auth');
         }
     })
+    */
 
 
 
@@ -169,11 +212,11 @@ var recognizer = new builder.LuisRecognizer(LUIS_URL);
 
 //root dialog just routes you to dialogs defined later
 bot.dialog('/', new builder.IntentDialog({ recognizers: [recognizer]})
-    .matches(/^login/i, '/login')
-    .matches(/^items/i, '/search_items')
-    .matches(/^books/i, '/search_books')
+    .matches("Login", '/login')
+    .matches("Search Items", '/search_items')
+    .matches("Search Books", '/search_books')
     .matches(/^auth/i, '/auth')
-    .matches(/^hi/i, '/askSearch' )
+    .matches("Hello", '/askSearch' )
     .matches("SayHello", "/hello")
     .matches("Query", "/query")
     .matches("Forget", "/forget")
@@ -186,7 +229,7 @@ bot.dialog('/', new builder.IntentDialog({ recognizers: [recognizer]})
 
 bot.dialog('/askSearch', [
     function (session) {
-        builder.Prompts.text(session, 'oh hai! I can help you search Rakuten! Do you want to search for "items" or "books"? Remember, im just a bot! Please only say one of those two things! Or say "auth" if you want to log in!');
+        builder.Prompts.text(session, 'hi! I can help you search Rakuten! Do you want to search for "items" or "books"? Remember, im just a bot! Please only say one of those two things! Or say "auth" if you want to log in!');
     }
 ]);
 
@@ -319,14 +362,13 @@ bot.dialog("/search_books", [
 
 
 
-//hook up the bot connector
- app.post('/api/messages', connector.listen());
+
 
 //start listening for messages
 app.listen(PORT, function () {
-    console.log("listening on %s", PORT);
+    console.log("listening on %s", app.name, app.url);
 });
-
+//console.log("listening on %s", PORT);
 
 // Card Functions
 function getHeroCardCarousel(session, body) {
