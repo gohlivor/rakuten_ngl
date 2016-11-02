@@ -1,0 +1,189 @@
+{
+  "luis_schema_version": "1.3.0",
+  "name": "authsample",
+  "desc": "",
+  "culture": "en-us",
+  "intents": [
+    {
+      "name": "Hello"
+    },
+    {
+      "name": "Login"
+    },
+    {
+      "name": "None"
+    },
+    {
+      "name": "Search Books"
+    },
+    {
+      "name": "Search Items"
+    }
+  ],
+  "entities": [
+    {
+      "name": "genre"
+    },
+    {
+      "name": "items"
+    }
+  ],
+  "composites": [],
+  "bing_entities": [],
+  "actions": [
+    {
+      "actionName": "Search Books",
+      "intentName": "Search Books",
+      "actionParameters": [
+        {
+          "parameterName": "Genre",
+          "entityName": "genre",
+          "required": true
+        }
+      ]
+    }
+  ],
+  "model_features": [],
+  "regex_features": [],
+  "utterances": [
+    {
+      "text": "book",
+      "intent": "Search Books",
+      "entities": [
+        {
+          "entity": "genre",
+          "startPos": 0,
+          "endPos": 0
+        }
+      ]
+    },
+    {
+      "text": "search gardening books",
+      "intent": "Search Books",
+      "entities": []
+    },
+    {
+      "text": "books",
+      "intent": "Search Books",
+      "entities": []
+    },
+    {
+      "text": "search books about gardening",
+      "intent": "Search Books",
+      "entities": [
+        {
+          "entity": "genre",
+          "startPos": 3,
+          "endPos": 3
+        }
+      ]
+    },
+    {
+      "text": "sup",
+      "intent": "Hello",
+      "entities": []
+    },
+    {
+      "text": "search fiction books",
+      "intent": "Search Books",
+      "entities": [
+        {
+          "entity": "genre",
+          "startPos": 1,
+          "endPos": 1
+        }
+      ]
+    },
+    {
+      "text": "mystery",
+      "intent": "Search Books",
+      "entities": [
+        {
+          "entity": "genre",
+          "startPos": 0,
+          "endPos": 0
+        }
+      ]
+    },
+    {
+      "text": "yo",
+      "intent": "Hello",
+      "entities": []
+    },
+    {
+      "text": "search for tshirts",
+      "intent": "Search Items",
+      "entities": [
+        {
+          "entity": "items",
+          "startPos": 2,
+          "endPos": 2
+        }
+      ]
+    },
+    {
+      "text": "search for tools",
+      "intent": "None",
+      "entities": [
+        {
+          "entity": "items",
+          "startPos": 2,
+          "endPos": 2
+        }
+      ]
+    },
+    {
+      "text": "search for televisions",
+      "intent": "Search Items",
+      "entities": [
+        {
+          "entity": "items",
+          "startPos": 2,
+          "endPos": 2
+        }
+      ]
+    },
+    {
+      "text": "hi",
+      "intent": "Hello",
+      "entities": []
+    },
+    {
+      "text": "what",
+      "intent": "None",
+      "entities": []
+    },
+    {
+      "text": "sign in",
+      "intent": "Login",
+      "entities": []
+    },
+    {
+      "text": "log me in",
+      "intent": "Login",
+      "entities": []
+    },
+    {
+      "text": "find books about trees",
+      "intent": "Search Books",
+      "entities": [
+        {
+          "entity": "genre",
+          "startPos": 3,
+          "endPos": 3
+        }
+      ]
+    },
+    {
+      "text": "find books about pizza",
+      "intent": "Search Books",
+      "entities": [
+        {
+          "entity": "genre",
+          "startPos": 3,
+          "endPos": 3
+        }
+      ]
+    }
+  ]
+}
