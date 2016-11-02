@@ -276,51 +276,12 @@ bot.dialog('/hello', function (session) {
 
 
 
-
-//this dialog is used to start the oauth flow with rakuten
-bot.dialog('/auth', function (session) {
-    console.log('[bot:/auth] ' + session.message);
-
-    var authId = crypto.randomBytes(32).toString('hex');
-    var authObj = {
-        id :  authId,
-        address : session.message.address   
-    };
-
-    Authorization.create(authObj, function (err, obj) {
-        console.log("reswtryjh");
-        if (err) {
-            console.log("[bot:/auth] error creating authorization");
-            session.endDialog('Failed to create an authorization request. Try again later.'); 
-        } else {
-            console.log("[bot:/auth] created authorization " + obj);
-            var url = AUTH_URL + "?aid=" + encodeURIComponent(authId);
-            session.endDialog('Hello. I can help you use Rakuten! But first please log in here ' + url); 
-            //var dbxlogo = builder.CardImage(session).url("https://cfl.dropboxstatic.com/static/images/brand/glyph@2x-vflJ1vxbq.png"); 
-               
-            var msg = new builder.Message(session)
-                .text("Hello. I can help you shop on Rakuten. But first please log in here.")
-                .attachments([ 
-                    new builder.SigninCard(session) 
-                        .text("Connect to Rakuten") 
-                        .button("connect", url) 
-                ]);
-    
-            session.endDialog(msg); 
-        }
-    });
-});
-
-
-
-//this dialog is initiated from the end of the oauth callback in restify
-bot.dialog("/auth_callback", function (session, args) {
-    //console.log("[/auth_callback]");
-    //console.log(args);
-    session.userData.rakutenProfile = args;
-    session.endDialog("Thanks %s. I'm all connected now", session.userData.rakutenProfile.name.givenName);
-    //session.endDialog("It might take me a few minutes learn about your files.  I'll let you know when I'm ready.");
-});
+//collects the user token code back and authenticates
+bot.dialog("/auth", [].concat(
+ba.authenticate("rakuten"),
+function(session, args, next) {
+session.endDialog("i'm authenticated");
+}));
 
 
 bot.dialog("/search_items", [
