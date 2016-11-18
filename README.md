@@ -75,3 +75,14 @@ bot.dialog("/search_items", [
 
 ## Using Microsoft Vision API
 To use the Vision API sign up here: <https://www.microsoft.com/cognitive-services/en-us/computer-vision-api>
+
+## All Resources Used:
+My bot on Azure (the formatting of the image carousels look better on Skype though):http://rakbot.azurewebsites.net/ <br />
+Matt Dotson's samples on authentication: https://github.com/mattdot/botauth <br />
+Matt Dotson's NPM package: https://www.npmjs.com/package/botauth <br />
+Passport for Rakuten: https://www.npmjs.com/package/passport-rakuten <br />
+Rakuten APIs: http://webservice.rakuten.co.jp/ <br />
+Cory Caywood (co developer)'s github: https://github.com/corycaywood <br />
+Microsoft LUIS: https://www.luis.ai/ <br />
+Bot Framework: https://docs.botframework.com/en-us/node/ <br />
+
