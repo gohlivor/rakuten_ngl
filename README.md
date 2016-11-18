@@ -1,3 +1,4 @@
+
 # READ ME
 ## Rakuten Auth Bot - In Chat authentication with Rakuten's ID Service
 
@@ -47,3 +48,30 @@ bot.dialog("/login", [].concat(
     }
 ));
 ```
+## Using Rakuten APIs
+To use Rakuten APIs, you need to sign up for a developer account and then you can choose which ones you want to use here: <http://webservice.rakuten.co.jp/> <br />
+Here is a snippet of how I used the Rakuten Ichiba API:
+```
+bot.dialog('/', new builder.IntentDialog({ recognizers: [recognizer]})
+    .matches("Search Items", '/search_items')
+    );
+
+bot.dialog("/search_items", [
+  function(session){
+      builder.Prompts.text(session, 'What items do you want to search for?');
+    },
+
+    function(session, results) {
+      console.log("api search: " + ICHIBA_API_SEARCH + encodeURIComponent(results.response));
+      request(ICHIBA_API_SEARCH + encodeURIComponent(results.response), 
+      function(error, response, body){
+      var body = JSON.parse(response.body);
+
+       session.send(getHeroCardCarousel(session, body));
+            }
+        )}
+])
+```
+
+## Using Microsoft Vision API
+To use the Vision API sign up here: <https://www.microsoft.com/cognitive-services/en-us/computer-vision-api>
